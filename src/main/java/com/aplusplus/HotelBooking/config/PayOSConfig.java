@@ -18,6 +18,11 @@ public class PayOSConfig {
 
     @Bean
     public PayOS payOS() {
+        System.out.println("=== PayOS Credentials Initialization Debug ===");
+        System.out.println("Client ID: " + (clientId != null ? (clientId.substring(0, Math.min(5, clientId.length())) + "... (len: " + clientId.length() + ")") : "null"));
+        System.out.println("API Key: " + (apiKey != null ? (apiKey.substring(0, Math.min(5, apiKey.length())) + "... (len: " + apiKey.length() + ")") : "null"));
+        System.out.println("Checksum Key: " + (checksumKey != null ? (checksumKey.substring(0, Math.min(5, checksumKey.length())) + "... (len: " + checksumKey.length() + ")") : "null"));
+        System.out.println("==============================================");
         return new PayOS(clientId, apiKey, checksumKey);
     }
 }

@@ -22,9 +22,9 @@ public class FirebaseStorageService {
 
         // Upload file lên Firebase Storage
         Blob blob = bucket.create(fileName, file.getBytes(), file.getContentType());
-        blob.createAcl(Acl.of(Acl.User.ofAllUsers(), Acl.Role.READER));
-
-        // Trả về URL của file đã upload
-        return blob.getMediaLink();
+        
+        // Trả về URL dạng Firebase Storage có thể truy cập công khai
+        String encodedFileName = java.net.URLEncoder.encode(fileName, java.nio.charset.StandardCharsets.UTF_8);
+        return "https://firebasestorage.googleapis.com/v0/b/" + bucket.getName() + "/o/" + encodedFileName + "?alt=media";
     }
 }

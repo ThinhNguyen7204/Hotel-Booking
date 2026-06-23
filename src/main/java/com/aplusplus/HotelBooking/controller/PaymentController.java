@@ -22,10 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import vn.payos.PayOS;
-import vn.payos.type.CheckoutResponseData;
-import vn.payos.type.ItemData;
-import vn.payos.type.PaymentData;
-import vn.payos.type.PaymentLinkData;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
+import vn.payos.model.v2.paymentRequests.PaymentLink;
+import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
+import vn.payos.model.webhooks.ConfirmWebhookResponse;
 
 @RestController
 @RequestMapping("/payments")
@@ -68,12 +69,18 @@ public class PaymentController {
             String currentTimeString = String.valueOf(String.valueOf(new Date().getTime()));
             long orderCode = Long.parseLong(currentTimeString.substring(currentTimeString.length() - 6));
 
-            ItemData item = ItemData.builder().name(productName).price(price).quantity(1).build();
+            PaymentLinkItem item = PaymentLinkItem.builder().name(productName).price((long) price).quantity(1).build();
 
-            PaymentData paymentData = PaymentData.builder().orderCode(orderCode).description(description).amount(price)
-                    .item(item).returnUrl(returnUrl).cancelUrl(cancelUrl).build();
+            CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
+                    .orderCode(orderCode)
+                    .description(description)
+                    .amount((long) price)
+                    .items(java.util.List.of(item))
+                    .returnUrl(returnUrl)
+                    .cancelUrl(cancelUrl)
+                    .build();
 
-            CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            CreatePaymentLinkResponse data = payOS.paymentRequests().create(paymentData);
 
             Payment payment = new Payment();
             payment.setPaymentCode(orderCode);
@@ -89,10 +96,9 @@ public class PaymentController {
         } catch (Exception e) {
             e.printStackTrace();
             response.put("error", -1);
-            response.put("message", "fail");
+            response.put("message", "fail: " + e.getMessage() + " (Class: " + e.getClass().getName() + ")");
             response.set("data", null);
             return response;
-
         }
     }
 
@@ -102,7 +108,7 @@ public class PaymentController {
         ObjectNode response = objectMapper.createObjectNode();
 
         try {
-            PaymentLinkData order = payOS.getPaymentLinkInformation(orderId);
+            PaymentLink order = payOS.paymentRequests().get(orderId);
 
             response.set("data", objectMapper.valueToTree(order));
             response.put("error", 0);
@@ -119,11 +125,11 @@ public class PaymentController {
     }
 
     @PutMapping(path = "/{orderId}")
-    public ObjectNode cancelOrder(@PathVariable("orderId") int orderId) {
+    public ObjectNode cancelOrder(@PathVariable("orderId") long orderId) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode response = objectMapper.createObjectNode();
         try {
-            PaymentLinkData order = payOS.cancelPaymentLink(orderId, null);
+            PaymentLink order = payOS.paymentRequests().cancel(orderId);
             response.set("data", objectMapper.valueToTree(order));
             response.put("error", 0);
             response.put("message", "ok");
@@ -142,7 +148,7 @@ public class PaymentController {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode response = objectMapper.createObjectNode();
         try {
-            String str = payOS.confirmWebhook(requestBody.get("webhookUrl"));
+            ConfirmWebhookResponse str = payOS.webhooks().confirm(requestBody.get("webhookUrl"));
             response.set("data", objectMapper.valueToTree(str));
             response.put("error", 0);
             response.put("message", "ok");
