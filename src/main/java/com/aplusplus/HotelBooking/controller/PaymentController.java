@@ -12,6 +12,7 @@ import com.aplusplus.HotelBooking.repository.UserRepo;
 import com.aplusplus.HotelBooking.service.implement.PaymentService;
 import com.aplusplus.HotelBooking.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,9 @@ public class PaymentController {
     private Utils utils;
     @Autowired
     private PaymentService paymentService;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     public PaymentController(PayOS payOS) {
         super();
@@ -155,7 +159,7 @@ public class PaymentController {
     @GetMapping("/confirm")
     public ResponseEntity<Void> confirmPayment(@RequestParam long orderCode){
         ObjectNode objectNodeResponse = getOrderById(orderCode);
-        String targetUrl = "http://localhost:5173/recent-booking";
+        String targetUrl = frontendUrl + "/recent-booking";
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(targetUrl));
         paymentService.confirmPayment(orderCode, objectNodeResponse.get("data").get("status").asText());
