@@ -4,6 +4,7 @@ import com.aplusplus.HotelBooking.model.Booking;
 import com.aplusplus.HotelBooking.model.Room;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,9 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
     public void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -21,7 +25,7 @@ public class EmailService {
             helper.setTo(toEmail);
             helper.setSubject(subject);
             helper.setText(htmlBody, true);  // `true` để cho phép nội dung HTML
-            helper.setFrom("anhduy8a1vx52412312022004@gmail.com", "A++ Hotel - Hỗ trợ khách hàng");
+            helper.setFrom(fromEmail, "A++ Hotel - Hỗ trợ khách hàng");
 
             mailSender.send(mimeMessage);
         } catch (Exception e) {
@@ -191,16 +195,20 @@ public class EmailService {
     """;
     }
     public void sendBookingConfirmationEmail(Booking booking) {
-        String toEmail = booking.getUser().getEmail();
-        String subject = "Xác nhận Đặt phòng của bạn";
-        String htmlContent = createBookingHtmlEmail(booking);
-        sendHtmlEmail(toEmail, subject, htmlContent);
+        new Thread(() -> {
+            String toEmail = booking.getUser().getEmail();
+            String subject = "Xác nhận Đặt phòng của bạn";
+            String htmlContent = createBookingHtmlEmail(booking);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+        }).start();
     }
 
     public void sendBookingCancellationEmail(Booking booking) {
-        String toEmail = booking.getUser().getEmail();
-        String subject = "Thông báo Hủy Đặt phòng do quá hạn thanh toán";
-        String htmlContent = createCancellationHtmlEmail(booking);
-        sendHtmlEmail(toEmail, subject, htmlContent);
+        new Thread(() -> {
+            String toEmail = booking.getUser().getEmail();
+            String subject = "Thông báo Hủy Đặt phòng do quá hạn thanh toán";
+            String htmlContent = createCancellationHtmlEmail(booking);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+        }).start();
     }
 }
